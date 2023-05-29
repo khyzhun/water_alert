@@ -6,19 +6,16 @@ import asyncio
 import config_reader
 
 
-TELEGRAM_BOT_TOKEN = config_reader.get_bot_token()
-TELEGRAM_CHAT_ID = config_reader.get_chat_id()
-SITE_URL = config_reader.get_site_url()
 KEYWORDS = ['призупиненя', 'минай', 'аварійні роботи', 'вихідних', 'травень', 'шановні', 'головна']
 
 
 async def send_notification(chat_id, message):
-    bot = Bot(token=TELEGRAM_BOT_TOKEN)
+    bot = Bot(token=config_reader.get_bot_token())
     await bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.HTML)
 
 
 async def check_water_supply():
-    response = requests.get(SITE_URL)
+    response = requests.get(config_reader.get_site_url())
     soup = BeautifulSoup(response.text, 'html.parser')
     last_post = soup.find('h1', class_='entry-title')
 
@@ -29,7 +26,8 @@ async def check_water_supply():
 
     if found_keywords:
         message = "Знайдено ключові слова: {}".format(', '.join(found_keywords))
-        await send_notification(TELEGRAM_CHAT_ID, message)
+        await send_notification(config_reader.get_chat_id(), message)
+
 
 
 if __name__ == '__main__':
