@@ -3,24 +3,51 @@ from bs4 import BeautifulSoup
 import asyncio
 import config_reader
 import notification_sender
+from datetime import datetime, date
 
-KEYWORDS = ['призупиненя', 'минай', 'аварійні роботи', 'вихідних', 'травень', 'шановні', 'головна']
+KEYWORDS = ['призупиненя', 'минай', 'аварійні роботи']
+
+
+def get_posts():
+    response = requests.get(config_reader.SITE_URL)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        post_elements = soup.find_all('article')
+        posts = []
+        for post_element in post_elements:
+            post_title = post_element.find('h1', class_='entry-title').text
+            post_date = post_element.find('time', class_='entry-date published').text
+            posts.append({'title': post_title, 'date': post_date})
+        return posts
+    else:
+        return []
+
+
+def filter_posts(posts):
+    today = date.today()
+    result = []
+    for post in posts:
+        post_date = datetime.strptime(post['date'], config_reader.SITE_DATE_FORMAT).date()
+        if post_date >= today:
+            result.append(post)
+    return result
+
+
+def search_keywords(posts, keywords):
+    found_keywords = []
+    for post in posts:
+        for keyword in keywords:
+            if keyword in post['title']:
+                found_keywords.append(keyword)
+                break  # If we come across at least one keyword, we can proceed to the next post.
+    return found_keywords
 
 
 async def check_water_supply():
-    response = requests.get(config_reader.SITE_URL)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    print(f'### soup={soup}')
-    last_post = soup.find('h1', class_='entry-title')
-    print(f'### last_post={last_post}')
-
-    found_keywords = []
-    for keyword in KEYWORDS:
-        if keyword in last_post.text:
-            found_keywords.append(keyword)
-
-    if found_keywords:
-        await notification_sender.send(config_reader.CHAT_ID, found_keywords)
+    all_posts = get_posts()
+    filtered_posts = filter_posts(all_posts)
+    found_keywords = search_keywords(filtered_posts, KEYWORDS)
+    await notification_sender.send(config_reader.CHAT_ID, found_keywords)
 
 
 if __name__ == '__main__':
