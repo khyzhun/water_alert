@@ -2,10 +2,10 @@ import requests
 from bs4 import BeautifulSoup
 import asyncio
 import config_reader
-import notification_sender
+import telegram_message_sender
 from datetime import datetime, date
 
-KEYWORDS = ['призупиненя', 'минай', 'аварійні роботи']
+KEYWORDS = ['призупинення', 'минай', 'аварійними']
 
 
 def get_posts():
@@ -13,6 +13,7 @@ def get_posts():
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
         post_elements = soup.find_all('article')
+        print(f'soup={soup}')
         posts = []
         for post_element in post_elements:
             post_title = post_element.find('h1', class_='entry-title').text
@@ -47,7 +48,7 @@ async def check_water_supply():
     all_posts = get_posts()
     filtered_posts = filter_posts(all_posts)
     found_keywords = search_keywords(filtered_posts, KEYWORDS)
-    await notification_sender.send(config_reader.CHAT_ID, found_keywords)
+    await telegram_message_sender.send_alert(config_reader.CHAT_ID, found_keywords)
 
 
 if __name__ == '__main__':
