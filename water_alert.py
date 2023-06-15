@@ -10,18 +10,18 @@ KEYWORDS = ['призупинення', 'минай', 'аварійними']
 
 def get_posts():
     response = requests.get(config_reader.SITE_URL)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        post_elements = soup.find_all('article')
-        print(f'soup={soup}')
-        posts = []
-        for post_element in post_elements:
-            post_title = post_element.find('h1', class_='entry-title').text
-            post_date = post_element.find('time', class_='entry-date published').text
-            posts.append({'title': post_title, 'date': post_date})
-        return posts
-    else:
+    if not response.status_code == 200:
         return []
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    post_elements = soup.find_all('article')
+    print(f'soup={soup}')
+    posts = []
+    for post_element in post_elements:
+        post_title = post_element.find('h1', class_='entry-title').text
+        post_date = post_element.find('time', class_='entry-date published').text
+        posts.append({'title': post_title, 'date': post_date})
+    return posts
 
 
 def filter_posts(posts):
